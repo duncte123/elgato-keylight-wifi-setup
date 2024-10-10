@@ -1,5 +1,6 @@
 package com.corsair.elgato;
 
+import com.corsair.elgato.http.FutureOkHttpCallback;
 import com.corsair.elgato.http.FutureVoidOkHttpCallback;
 import com.corsair.elgato.model.AccessoryData;
 import okhttp3.*;
@@ -15,9 +16,19 @@ public class ClientApi {
         this.address = address;
     }
 
-//    public CompletableFuture<AccessoryData> getAccessoryInfo() {
-//        //
-//    }
+    public CompletableFuture<AccessoryData> getAccessoryInfo() {
+        final Request request = new Request.Builder()
+                .url(address + "/elgato/accessory-info")
+                .header("Accept", "application/json")
+                .get()
+                .build();
+
+        final FutureOkHttpCallback<AccessoryData> callback = new FutureOkHttpCallback<>(AccessoryData.class);
+
+        this.httpClient.newCall(request).enqueue(callback);
+
+        return callback;
+    }
 
     public CompletableFuture<Void> putWifiInfo(byte[] configuration) {
         final Request request = new Request.Builder()

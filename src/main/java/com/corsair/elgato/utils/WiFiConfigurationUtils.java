@@ -3,7 +3,6 @@ package com.corsair.elgato.utils;
 import com.corsair.elgato.model.WiFiData;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import kotlin.collections.ArraysKt;
-import kotlin.jvm.internal.Intrinsics;
 
 import javax.crypto.Cipher;
 import javax.crypto.spec.SecretKeySpec;
@@ -19,11 +18,8 @@ public class WiFiConfigurationUtils {
     }
 
     public final byte[] encryptWiFiConfiguration(String passphrase, String ssid, int securityType, int firmwareBuildNumber, int hardwareBoardType) {
-        Intrinsics.checkNotNullParameter(passphrase, "passphrase");
-        Intrinsics.checkNotNullParameter(ssid, "ssid");
         try {
             byte[] bytes = new ObjectMapper().writeValueAsBytes(new WiFiData(passphrase, ssid, securityType));
-            Intrinsics.checkNotNullExpressionValue(bytes, "getBytes(...)");
             int length = bytes.length % 16;
             if (length != 0) {
                 int i4 = 16 - length;
@@ -37,27 +33,39 @@ public class WiFiConfigurationUtils {
             for (int i6 = 0; i6 < 16; i6++) {
                 padding[i6] = this.INIT_VECTOR[new Random().nextInt(16)];
             }
-            byte[] plus = ArraysKt.plus(padding, bytes);
+
+//            byte[] plus = ArraysKt.plus(padding, bytes);
+
+            // TODO: test this impl as replacement for kotlin stuff (how do I even have that??)
+            byte[] plus = Arrays.copyOf(padding, padding.length + bytes.length);
+            System.arraycopy(bytes, 0, plus, padding.length, bytes.length);
+
             StringBuilder sb = new StringBuilder();
             for (byte valueOf : plus) {
                 String format = String.format("%02X ", Arrays.copyOf(new Object[]{Byte.valueOf(valueOf)}, 1));
-                Intrinsics.checkNotNullExpressionValue(format, "format(...)");
                 sb.append(format);
             }
+
+            System.out.println(sb);
+
             byte[] encryptionKey = getEncryptionKey(hardwareBoardType, firmwareBuildNumber);
             StringBuilder sb2 = new StringBuilder();
             for (byte valueOf2 : encryptionKey) {
                 String format2 = String.format("%02X ", Arrays.copyOf(new Object[]{Byte.valueOf(valueOf2)}, 1));
-                Intrinsics.checkNotNullExpressionValue(format2, "format(...)");
                 sb2.append(format2);
             }
+
+            System.out.println(sb2);
+
             byte[] encrypt = encrypt(encryptionKey, plus);
             StringBuilder sb3 = new StringBuilder();
             for (byte valueOf3 : encrypt) {
                 String format3 = String.format("%02X ", Arrays.copyOf(new Object[]{Byte.valueOf(valueOf3)}, 1));
-                Intrinsics.checkNotNullExpressionValue(format3, "format(...)");
                 sb3.append(format3);
             }
+
+            System.out.println(sb3);
+
             return encrypt;
         } catch (Exception e) {
             e.printStackTrace();
@@ -69,17 +77,13 @@ public class WiFiConfigurationUtils {
         SecretKeySpec secretKeySpec = new SecretKeySpec(bArr, "AES");
         Cipher instance = Cipher.getInstance("AES/CBC/NoPadding");
         instance.init(1, secretKeySpec, new SecureRandom());
-        byte[] doFinal = instance.doFinal(bArr2);
-        Intrinsics.checkNotNullExpressionValue(doFinal, "doFinal(...)");
-        return doFinal;
+        return instance.doFinal(bArr2);
     }
 
     private byte[] decrypt(byte[] bArr, byte[] bArr2, byte[] bArr3) throws Exception {
         SecretKeySpec secretKeySpec = new SecretKeySpec(bArr, "AES");
         Cipher instance = Cipher.getInstance("AES/CBC/NoPadding");
         instance.init(2, secretKeySpec, new SecureRandom());
-        byte[] doFinal = instance.doFinal(bArr2);
-        Intrinsics.checkNotNullExpressionValue(doFinal, "doFinal(...)");
-        return doFinal;
+        return instance.doFinal(bArr2);
     }
 }
